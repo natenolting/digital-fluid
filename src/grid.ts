@@ -22,6 +22,7 @@ export interface GridParams {
   maskFreq: number;
   maskLo: number;       // mask falloff; cells are randomly dropped across this band
   maskHi: number;
+  hashDither?: boolean; // PROTOTYPE: per-cell hash instead of a shared RNG stream
 }
 
 export interface Cell {
@@ -54,6 +55,14 @@ function boundaries(weights: number[], start: number, size: number): number[] {
     out.push(start + (acc / total) * size);
   }
   return out;
+}
+
+// PROTOTYPE: stable per-cell random in [0,1), independent of which cells are inked.
+function cellHash(seed: number, i: number, j: number): number {
+  let h = (seed ^ Math.imul(i + 1, 0x9e3779b1) ^ Math.imul(j + 1, 0x85ebca77)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
+  h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 export function buildCells(
@@ -103,7 +112,8 @@ export function buildCells(
 
       if (p.maskOn) {
         const m = (maskNoise(uGeo * p.maskFreq, vGeo * p.maskFreq) + 1) / 2;
-        if (smoothstep(p.maskLo, p.maskHi, m) < dropRng()) continue;
+        const roll = p.hashDither ? cellHash(seed, i, j) : dropRng();
+        if (smoothstep(p.maskLo, p.maskHi, m) < roll) continue;
       }
 
       cells.push({ i, j, x0, x1, y0, y1 });

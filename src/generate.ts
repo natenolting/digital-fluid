@@ -1,7 +1,7 @@
 // Pure pipeline: params → polylines in mm. No DOM, so it runs in node too.
 
 import { makeProgram } from './marbling';
-import { buildCells } from './grid';
+import { buildCells, type Cell } from './grid';
 import { hatchCells, type Polyline } from './hatch';
 import { stream } from './rng';
 import type { Params } from './params';
@@ -11,6 +11,7 @@ export interface Drawing {
   height: number;
   lines: Polyline[];
   cellCount: number;
+  cells: Cell[]; // PROTOTYPE: exposed for the tween churn metric
 }
 
 export function generate(p: Params): Drawing {
@@ -22,5 +23,5 @@ export function generate(p: Params): Drawing {
     w: width - margin * 2,
     h: height - margin * 2,
   });
-  return { width, height, lines: hatchCells(cells, p.hatch), cellCount: cells.length };
+  return { width, height, lines: hatchCells(cells, p.hatch), cellCount: cells.length, cells };
 }
